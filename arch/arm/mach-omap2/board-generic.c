@@ -15,6 +15,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 #include <linux/irqdomain.h>
+#include <linux/clk-provider.h>
 
 #include <asm/hardware/gic.h>
 #include <asm/mach/arch.h>
@@ -36,11 +37,19 @@ static struct of_device_id omap_dt_match_table[] __initdata = {
 	{ }
 };
 
+static struct of_device_id clk_dt_match_table[] __initdata = {
+	{ .compatible = "fixed-clock", .data = of_fixed_clk_setup, },
+	{}
+};
+
 static void __init omap_generic_init(void)
 {
 	omap_sdrc_init(NULL, NULL);
 
 	of_platform_populate(NULL, omap_dt_match_table, NULL, NULL);
+
+    /* Instantiate clocks from DT */
+	of_clk_init(clk_dt_match_table);
 
 	/*
 	 * HACK: call display setup code for selected boards to enable omapdss.
