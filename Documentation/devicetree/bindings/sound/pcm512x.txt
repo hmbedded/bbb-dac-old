@@ -17,6 +17,12 @@ Optional properties:
 
   - clocks : A clock specifier for the clock connected as SCLK.  If this
     is absent the device will be configured to clock from BCLK.
+    
+  - pllref-gpio : GPIO input used as pll reference.
+  
+  - pllout-gpio : GPIO output used to out PLLCLK/4.
+  
+  - pllref-gpio : GPIO output for pll lock signal.
 
 Example:
 
