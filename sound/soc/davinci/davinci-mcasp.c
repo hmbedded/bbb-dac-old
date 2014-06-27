@@ -960,8 +960,6 @@ static const struct snd_soc_dai_ops davinci_mcasp_dai_ops = {
 				SNDRV_PCM_FMTBIT_U8 | \
 				SNDRV_PCM_FMTBIT_S16_LE | \
 				SNDRV_PCM_FMTBIT_U16_LE | \
-				SNDRV_PCM_FMTBIT_S24_LE | \
-				SNDRV_PCM_FMTBIT_U24_LE | \
 				SNDRV_PCM_FMTBIT_S24_3LE | \
 				SNDRV_PCM_FMTBIT_U24_3LE | \
 				SNDRV_PCM_FMTBIT_S32_LE | \
