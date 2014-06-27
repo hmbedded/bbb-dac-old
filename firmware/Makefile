@@ -205,6 +205,10 @@ fw-shipped-$(CONFIG_CAPE_BEAGLEBONE) += \
 	cape-bone-ibb-00A0.dtbo \
 	BB-BONE-CRYPTO-00A0.dtbo
 
+# the IQAudIO DAC Cape
+fw-shipped-$(CONFIG_SND_SOC_IQAUDIO) += \
+	cape-boneblack-iqaudio-00A0.dtbo
+
 # the geiger cape
 fw-shipped-$(CONFIG_CAPE_BEAGLEBONE_GEIGER) += \
 	cape-bone-geiger-00A0.dtbo

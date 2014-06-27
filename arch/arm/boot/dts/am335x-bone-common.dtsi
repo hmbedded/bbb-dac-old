@@ -405,7 +405,14 @@
 					dtbo = "cape-bebopr-R2.dtbo";
 				};
 			};
-
+            
+            cape@16 {
+                part-number = "BB-IQAUDIO-DAC";
+                version@00A0 {
+                    version = "00A0";
+                    dtbo = "cape-boneblack-iqaudio-00A0.dtbo";
+                };
+            };
 		};
 	};
 
