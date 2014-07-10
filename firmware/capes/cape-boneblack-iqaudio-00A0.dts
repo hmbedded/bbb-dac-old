@@ -82,7 +82,7 @@
 		__overlay__ {
 			sound@iqaudio {
 				compatible = "iqaudio,am335x-iqaudio";
-				iqaudio,model = "IQaudIO DAC";
+				iqaudio,model = "IQaudIO";
 				iqaudio,audio-codec = <&pcm5122>;
 				iqaudio,mcasp-controller = <&mcasp1>;
 			};
