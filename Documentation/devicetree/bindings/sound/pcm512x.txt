@@ -1,11 +1,12 @@
-PCM512x audio CODECs
+PCM512x, PCM514x audio CODECs and TAS575x digital amps
 
-These devices support both I2C and SPI (configured with pin strapping
-on the board).
+The PCM51xx devices support both I2C and SPI (configured with pin strapping
+on the board). The TAS575x devices only support I2C.
 
 Required properties:
 
-  - compatible : One of "ti,pcm5121" or "ti,pcm5122"
+  - compatible : One of "ti,pcm5121", "ti,pcm5122", "ti,pcm5141", "ti,pcm5142",
+                 "ti,tas5754m" or "ti,tas5756m"
 
   - reg : the I2C address of the device for I2C, the chip select
           number for SPI.

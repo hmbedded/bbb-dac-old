@@ -289,13 +289,13 @@ config SND_SOC_PCM512x
 	tristate
 
 config SND_SOC_PCM512x_I2C
-	tristate "Texas Instruments PCM512x CODECs - I2C"
+	tristate "Texas Instruments PCM512x, PCM514x, TAS575x - I2C"
 	depends on I2C
 	select SND_SOC_PCM512x
 	select REGMAP_I2C
 
 config SND_SOC_PCM512x_SPI
-	tristate "Texas Instruments PCM512x CODECs - SPI"
+	tristate "Texas Instruments PCM512x, PCM514x - SPI"
 	depends on SPI_MASTER
 	select SND_SOC_PCM512x
 	select REGMAP_SPI
