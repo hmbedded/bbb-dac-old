@@ -21,6 +21,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
+#include <linux/of.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
 #include <sound/tlv.h>
@@ -39,6 +40,7 @@ struct pcm512x_priv {
 	struct clk *sclk;
 	struct regulator_bulk_data supplies[PCM512x_NUM_SUPPLIES];
 	struct notifier_block supply_nb[PCM512x_NUM_SUPPLIES];
+	enum pcm512x_clockType ctype;
 };
 
 /*
@@ -392,8 +394,9 @@ EXPORT_SYMBOL_GPL(pcm512x_regmap);
 
 int pcm512x_probe(struct device *dev, struct regmap *regmap)
 {
+	struct device_node *np = dev->of_node;
 	struct pcm512x_priv *pcm512x;
-	int i, ret;
+	int i, ret, value;
 
 	pcm512x = devm_kzalloc(dev, sizeof(struct pcm512x_priv), GFP_KERNEL);
 	if (!pcm512x)
@@ -468,6 +471,11 @@ int pcm512x_probe(struct device *dev, struct regmap *regmap)
 			dev_err(dev, "Failed to enable SCLK: %d\n", ret);
 			return ret;
 		}
+
+		/* Get the SCLK clock-type - default to PCM512x_AUDIO_RATE */
+		pcm512x->ctype = PCM512x_AUDIO_RATE;
+		if (!of_property_read_u32(np, "clock-type", &value))
+			pcm512x->ctype = value;
 	}
 
 	/* Default to standby mode */

@@ -20,6 +20,11 @@
 #include <linux/pm.h>
 #include <linux/regmap.h>
 
+enum pcm512x_clockType {
+	PCM512x_AUDIO_RATE,
+	PCM512x_NON_AUDIO_RATE,
+};
+
 #define PCM512x_VIRT_BASE 0x100
 #define PCM512x_PAGE_LEN  0x100
 #define PCM512x_PAGE_BASE(n)  (PCM512x_VIRT_BASE + (PCM512x_PAGE_LEN * n))

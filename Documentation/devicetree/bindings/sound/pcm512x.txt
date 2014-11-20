@@ -17,7 +17,13 @@ Required properties:
 Optional properties:
 
   - clocks : A clock specifier for the clock connected as SCLK.  If this
-    is absent the device will be configured to clock from BCLK.
+             is absent the device will be configured to clock from BCLK.
+
+  - clock-type : 0, 1 specifying the following:
+                 0: SCLK is a multiple of the audio sampling rate.
+                 1: SCLK is not a multiple of the audio sampling rate.
+
+                 If absent clock type 0 is the default.
 
 Example:
 
