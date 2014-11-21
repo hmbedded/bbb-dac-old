@@ -151,6 +151,19 @@ enum pcm512x_mode {
 /* Page 0, Register 18 - GPIO Source for PLL ref */
 #define PCM512x_GREF_MASK (7 << 0)
 
+/* Page 0, Register 20 - PLL P */
+#define PCM512x_PLL_PPDV_MASK (15 << 0)
+
+/* Page 0, Register 21 - PLL J */
+#define PCM512x_PLL_PJDV_MASK (63 << 0)
+
+/* Page 0, Register 22 - PLL D */
+#define PCM512x_PLL_PDDV_MASK_MS (63 << 0)              // (bits 13..8)
+#define PCM512x_PLL_PDDV_MASK_LS (255 << 0)             // (bits 7..0)
+
+/* Page 0, Register 24 - PLL R */
+#define PCM512x_PLL_PRDV_MASK (15 << 0)
+
 /* Page 0, Register 28 - DAC Clock Divider */
 #define PCM512x_DDAC_MASK (127 << 0)
 

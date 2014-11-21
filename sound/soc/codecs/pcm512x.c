@@ -45,6 +45,7 @@ struct pcm512x_priv {
 	int pll_out_gpio;
 	int pll_lock_gpio;
 	enum pcm512x_mode mode;
+	int mclk;
 };
 
 /*
@@ -346,6 +347,46 @@ static int pcm512x_set_bias_level(struct snd_soc_codec *codec,
 	return 0;
 }
 
+static int pcm512x_set_sysclk(struct snd_soc_dai *dai,
+					int clk_id, unsigned int freq, int dir)
+{
+	struct pcm512x_priv *pcm512x = dev_get_drvdata(dai->codec->dev);
+
+	pcm512x->mclk = freq;
+
+	if (pcm512x->ctype == PCM512x_NON_AUDIO_RATE) {
+		int refclk = clk_get_rate(pcm512x->sclk);
+		int pllclk = 4 * freq;
+		int P = 1, R = 1;
+		int J, D;
+		s64 temp;
+
+		/* Set P according to rule refclk/P <= 20MHz */
+		if (refclk > 20000000)
+			P = refclk / 20000000 + 1;
+	
+		/* Work out the multiplication factor */
+		J = P * pllclk / refclk;
+		temp = (P * pllclk) % refclk;
+		D = div_s64(10000*temp, refclk);
+
+		regmap_update_bits(pcm512x->regmap, PCM512x_PLL_COEFF_0,
+							PCM512x_PLL_PPDV_MASK, P-1);
+		regmap_update_bits(pcm512x->regmap, PCM512x_PLL_COEFF_1,
+							PCM512x_PLL_PJDV_MASK, J);
+		regmap_update_bits(pcm512x->regmap, PCM512x_PLL_COEFF_2,
+							PCM512x_PLL_PDDV_MASK_MS,
+							(D & (PCM512x_PLL_PDDV_MASK_MS << 8)) >> 8);
+		regmap_update_bits(pcm512x->regmap, PCM512x_PLL_COEFF_3,
+							PCM512x_PLL_PDDV_MASK_LS,
+							D & PCM512x_PLL_PDDV_MASK_LS);
+		regmap_update_bits(pcm512x->regmap, PCM512x_PLL_COEFF_4,
+							PCM512x_PLL_PRDV_MASK, R-1);
+	}
+
+	return 0;
+}
+
 static int pcm512x_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 {
 	struct pcm512x_priv *pcm512x = dev_get_drvdata(dai->codec->dev);
@@ -407,6 +448,7 @@ static int pcm512x_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 
 static const struct snd_soc_dai_ops pcm512x_dai_ops = {
 	.set_fmt        = pcm512x_set_dai_fmt,
+	.set_sysclk     = pcm512x_set_sysclk,
 };
 
 static struct snd_soc_dai_driver pcm512x_dai = {
@@ -539,6 +581,9 @@ int pcm512x_probe(struct device *dev, struct regmap *regmap)
 			dev_err(dev, "Failed to enable SCLK: %d\n", ret);
 			return ret;
 		}
+
+		/* Default MCLK to the frequency of SCLK */
+		pcm512x->mclk = clk_get_rate(pcm512x->sclk);
 
 		/* Get the SCLK clock-type - default to PCM512x_AUDIO_RATE */
 		pcm512x->ctype = PCM512x_AUDIO_RATE;
