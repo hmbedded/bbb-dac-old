@@ -41,6 +41,9 @@ struct pcm512x_priv {
 	struct regulator_bulk_data supplies[PCM512x_NUM_SUPPLIES];
 	struct notifier_block supply_nb[PCM512x_NUM_SUPPLIES];
 	enum pcm512x_clockType ctype;
+	int pll_ref_gpio;
+	int pll_out_gpio;
+	int pll_lock_gpio;
 };
 
 /*
@@ -464,7 +467,7 @@ int pcm512x_probe(struct device *dev, struct regmap *regmap)
 
 		/* Switch PLL input to BCLK */
 		regmap_update_bits(regmap, PCM512x_PLL_REF,
-				   PCM512x_SREF, PCM512x_SREF);
+				   PCM512x_SREF_MASK, PCM512x_SREF_BCLK);
 	} else {
 		ret = clk_prepare_enable(pcm512x->sclk);
 		if (ret != 0) {
@@ -476,6 +479,60 @@ int pcm512x_probe(struct device *dev, struct regmap *regmap)
 		pcm512x->ctype = PCM512x_AUDIO_RATE;
 		if (!of_property_read_u32(np, "clock-type", &value))
 			pcm512x->ctype = value;
+
+		if (pcm512x->ctype == PCM512x_NON_AUDIO_RATE) {
+			if (!of_property_read_u32(np, "pll-ref-gpio", &value)) {
+				pcm512x->pll_ref_gpio = value;
+			} else {
+				dev_err(dev, "pll-ref-gpio not found: Mandatory for clock-type 1\n");
+				return -EFAULT;
+			}
+			if (!of_property_read_u32(np, "pll-out-gpio", &value)) {
+				pcm512x->pll_out_gpio = value;
+			} else {
+				dev_err(dev, "pll-out-gpio not found: Mandatory for clock-type 1\n");
+				return -EFAULT;
+			}
+
+			/* Set flex mode for advanced clock tree */
+			regmap_update_bits(regmap, PCM512x_PLL_FLEX1, PCM512x_PLLFLEX_MASK, 0x11);
+			regmap_update_bits(regmap, PCM512x_PLL_FLEX2, PCM512x_PLLFLEX_MASK, 0xff);
+
+			/* Disable auto divider error detection */
+			regmap_update_bits(regmap, PCM512x_ERROR_DETECT,
+				PCM512x_IDFS|PCM512x_IDBK|PCM512x_IDSK|PCM512x_IDCH|PCM512x_DCAS,
+				PCM512x_IDFS|PCM512x_IDBK|PCM512x_IDSK|PCM512x_IDCH|PCM512x_DCAS);
+
+			/* Set DAC & NCP divider values
+			 * These are fixed - i.e. no dependecy on sampling rate */
+			regmap_update_bits(regmap, PCM512x_DAC_CLKDIV, PCM512x_DDAC_MASK, 16-1);
+			regmap_update_bits(regmap, PCM512x_NCP_CLKDIV, PCM512x_DNCP_MASK, 4-1);
+
+			/* Set PLL reference GPIO */
+			regmap_update_bits(regmap, PCM512x_PLL_REF,
+									PCM512x_SREF_MASK, PCM512x_SREF_GPIO);
+			regmap_update_bits(regmap, PCM512x_PLL_REF_GPIO,
+									PCM512x_GREF_MASK, pcm512x->pll_ref_gpio-1);
+
+			/* Set PLL output GPIO */
+			regmap_update_bits(regmap, PCM512x_GPIO_EN,
+								1 << (pcm512x->pll_out_gpio-1),
+								1 << (pcm512x->pll_out_gpio-1));
+			regmap_update_bits(regmap,
+								PCM512x_GPIO_OUTPUT_1 + pcm512x->pll_out_gpio-1,
+								PCM512x_GxSL_MASK, PCM512x_GxSL_PPLDIV4);
+
+			/* Set PLL lock GPIO */
+			if (!of_property_read_u32(np, "pll-lock-gpio", &value)) {
+				pcm512x->pll_lock_gpio = value;
+				regmap_update_bits(regmap, PCM512x_GPIO_EN,
+								1 << (pcm512x->pll_lock_gpio-1),
+								1 << (pcm512x->pll_lock_gpio-1));
+				regmap_update_bits(regmap,
+							PCM512x_GPIO_OUTPUT_1 + pcm512x->pll_lock_gpio-1,
+							PCM512x_GxSL_MASK, PCM512x_GxSL_PLLLOCK);
+			}
+		}
 	}
 
 	/* Default to standby mode */

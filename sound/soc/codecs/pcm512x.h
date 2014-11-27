@@ -42,6 +42,7 @@ enum pcm512x_clockType {
 #define PCM512x_DSP_GPIO_INPUT    (PCM512x_PAGE_BASE(0) +  10)
 #define PCM512x_MASTER_MODE       (PCM512x_PAGE_BASE(0) +  12)
 #define PCM512x_PLL_REF           (PCM512x_PAGE_BASE(0) +  13)
+#define PCM512x_PLL_REF_GPIO      (PCM512x_PAGE_BASE(0) +  18)
 #define PCM512x_PLL_COEFF_0       (PCM512x_PAGE_BASE(0) +  20)
 #define PCM512x_PLL_COEFF_1       (PCM512x_PAGE_BASE(0) +  21)
 #define PCM512x_PLL_COEFF_2       (PCM512x_PAGE_BASE(0) +  22)
@@ -96,7 +97,10 @@ enum pcm512x_clockType {
 
 #define PCM512x_CRAM_CTRL         (PCM512x_PAGE_BASE(44) +  1)
 
-#define PCM512x_MAX_REGISTER      (PCM512x_PAGE_BASE(44) +  1)
+#define PCM512x_PLL_FLEX1         (PCM512x_PAGE_BASE(253) + 63)
+#define PCM512x_PLL_FLEX2         (PCM512x_PAGE_BASE(253) + 64)
+
+#define PCM512x_MAX_REGISTER      (PCM512x_PAGE_BASE(253) + 64)
 
 /* Page 0, Register 1 - reset */
 #define PCM512x_RSTR (1 << 0)
@@ -124,8 +128,29 @@ enum pcm512x_clockType {
 #define PCM512x_DEMP       (1 << 4)
 #define PCM512x_DEMP_SHIFT 4
 
+/* Page 0, Register 9 - BCK, LRCLK configuration */
+#define PCM512x_LRKO (1 << 0)
+#define PCM512x_BCKO (1 << 4)
+#define PCM512x_BCKP (1 << 5)
+
+/* Page 0, Register 12 - Master Mode BCLK, LRCLK Reset */
+#define PCM512x_RLRK (1 << 0)
+#define PCM512x_RBCK (1 << 1)
+
 /* Page 0, Register 13 - PLL reference */
-#define PCM512x_SREF (1 << 4)
+#define PCM512x_SREF_SCLK (0 << 4)
+#define PCM512x_SREF_BCLK (1 << 4)
+#define PCM512x_SREF_GPIO (3 << 4)
+#define PCM512x_SREF_MASK (7 << 4)
+
+/* Page 0, Register 18 - GPIO Source for PLL ref */
+#define PCM512x_GREF_MASK (7 << 0)
+
+/* Page 0, Register 28 - DAC Clock Divider */
+#define PCM512x_DDAC_MASK (127 << 0)
+
+/* Page 0, Register 29 - NCP Clock Divider */
+#define PCM512x_DNCP_MASK (127 << 0)
 
 /* Page 0, Register 37 - Error detection */
 #define PCM512x_IPLK (1 << 0)
@@ -135,6 +160,18 @@ enum pcm512x_clockType {
 #define PCM512x_IDSK (1 << 4)
 #define PCM512x_IDBK (1 << 5)
 #define PCM512x_IDFS (1 << 6)
+
+/* Page 0, Register 40 - I2S Configuration */
+#define PCM512x_ALEN_16   (0 << 0)
+#define PCM512x_ALEN_20   (1 << 0)
+#define PCM512x_ALEN_24   (2 << 0)
+#define PCM512x_ALEN_32   (3 << 0)
+#define PCM512x_ALEN_MASK (3 << 0)
+#define PCM512x_AFMT_I2S  (0 << 4)
+#define PCM512x_AFMT_DSP  (1 << 4)
+#define PCM512x_AFMT_RTJ  (2 << 4)
+#define PCM512x_AFMT_LTJ  (3 << 4)
+#define PCM512x_AFMT_MASK (3 << 4)
 
 /* Page 0, Register 42 - DAC routing */
 #define PCM512x_AUPR_SHIFT 0
@@ -159,6 +196,11 @@ enum pcm512x_clockType {
 #define PCM512x_AMLE_SHIFT 1
 #define PCM512x_AMLR_SHIFT 0
 
+/* Page 0, Registers 80 to 85 - GPIO Output Configuration */
+#define PCM512x_GxSL_PLLLOCK (10 << 0)
+#define PCM512x_GxSL_PPLDIV4 (16 << 0)
+#define PCM512x_GxSL_MASK    (31 << 0)
+
 /* Page 1, Register 2 - analog volume control */
 #define PCM512x_RAGN_SHIFT 0
 #define PCM512x_LAGN_SHIFT 4
@@ -166,6 +208,9 @@ enum pcm512x_clockType {
 /* Page 1, Register 7 - analog boost control */
 #define PCM512x_AGBR_SHIFT 0
 #define PCM512x_AGBL_SHIFT 4
+
+/* Page 253, Registers 63 & 64, - flex mode */
+#define PCM512x_PLLFLEX_MASK (255 << 0)
 
 extern const struct dev_pm_ops pcm512x_pm_ops;
 extern const struct regmap_config pcm512x_regmap;

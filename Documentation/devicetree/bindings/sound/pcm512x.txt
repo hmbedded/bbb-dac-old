@@ -19,11 +19,22 @@ Optional properties:
   - clocks : A clock specifier for the clock connected as SCLK.  If this
              is absent the device will be configured to clock from BCLK.
 
-  - clock-type : 0, 1 specifying the following:
+  - clock-type : 0 or 1 specifying the following:
                  0: SCLK is a multiple of the audio sampling rate.
                  1: SCLK is not a multiple of the audio sampling rate.
 
                  If absent clock type 0 is the default.
+
+    If clock-type 1 is specified then some/all of the following properties are
+    required:
+
+  - pll-ref-gpio : GPIO input used for non audio related pll reference clock.
+                   This is mandatory when using clock-type 1.
+
+  - pll-out-gpio : GPIO output used to output the pll clock divided by 4. This
+                   is mandatory when using clock-type 1.
+  
+  - pll-lock-gpio : GPIO output for the pll lock signal. This is optional.
 
 Example:
 
