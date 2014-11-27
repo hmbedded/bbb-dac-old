@@ -25,6 +25,7 @@
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
 #include <sound/tlv.h>
+#include <sound/pcm_params.h>
 
 #include "pcm512x.h"
 
@@ -347,6 +348,83 @@ static int pcm512x_set_bias_level(struct snd_soc_codec *codec,
 	return 0;
 }
 
+static int pcm512x_hw_params(struct snd_pcm_substream *substream,
+			    struct snd_pcm_hw_params *params,
+			    struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct pcm512x_priv *pcm512x = dev_get_drvdata(codec->dev);
+	int mclk, rate;
+	int lrclk_bclk_ratio, bclk_mclk_ratio;
+	int alen;
+	int ddsp, dosr;
+	int fssp;
+	int idac;
+
+	if (pcm512x->mode == PCM512x_MASTER_MODE) {
+		mclk = pcm512x->mclk;
+		rate = params_rate(params);
+		
+		/* Set the left/right clock to bit clock and
+		 * bit clock to system clock ratios */
+		lrclk_bclk_ratio = snd_interval_value(hw_param_interval(params, SNDRV_PCM_HW_PARAM_FRAME_BITS));
+		bclk_mclk_ratio = mclk / rate / lrclk_bclk_ratio;
+		
+		regmap_update_bits(pcm512x->regmap, PCM512x_MASTER_CLKDIV_1, PCM512X_DBCK_MASK, bclk_mclk_ratio-1);
+		regmap_update_bits(pcm512x->regmap, PCM512x_MASTER_CLKDIV_2, PCM512X_DLRCK_MASK, lrclk_bclk_ratio-1);
+		
+		/* Set the sample width */
+		switch (snd_pcm_format_width(params_format(params))) {
+		case 16:
+			alen = PCM512x_ALEN_16;
+			break;
+		case 20:
+			alen = PCM512x_ALEN_20;
+			break;
+		case 24:
+			alen = PCM512x_ALEN_24;
+			break;
+		case 32:
+			alen = PCM512x_ALEN_32;
+			break;
+		default:
+			dev_err(codec->dev, "Unsupported sample size: %i\n",
+				snd_pcm_format_width(params_format(params)));
+			return -EINVAL;
+		}
+		
+		regmap_update_bits(pcm512x->regmap, PCM512x_IDAC_1, PCM512x_ALEN_MASK, alen);
+		
+		/* Set the DSP divider value (ratio is from PLL clock) */
+		ddsp = 4*mclk/(1024*rate);
+		if (ddsp < 2)
+			ddsp = 2;
+		regmap_update_bits(pcm512x->regmap, PCM512x_DSP_CLKDIV, PCM512x_DDAC_MASK, ddsp-1);
+		
+		/* Set the OSR divider value */
+		dosr = mclk/(64*rate);
+		regmap_update_bits(pcm512x->regmap, PCM512x_OSR_CLKDIV, PCM512x_DOSR_MASK, dosr-1);
+		
+		/* Set the speed mode depending on sampling rate */
+		if (rate <= 48000)
+			fssp = 0;
+		else if (rate <= 96000)
+			fssp = 1;
+		else if (rate <= 192000)
+			fssp = 2;
+		else
+			fssp = 3;
+		regmap_update_bits(pcm512x->regmap, PCM512x_FS_SPEED_MODE, PCM512x_FSSP_MASK, fssp);
+		
+		/* Set the number od DSP clock cycles in one audio frame */
+		idac = (4*mclk)/ddsp/rate;
+		regmap_update_bits(pcm512x->regmap, PCM512x_IDAC_1, PCM512x_IDAC_MASK, (idac & (PCM512x_IDAC_MASK << 8)) >> 8);
+		regmap_update_bits(pcm512x->regmap, PCM512x_IDAC_2, PCM512x_IDAC_MASK, idac & PCM512x_IDAC_MASK);
+	}
+
+	return 0;
+}
+
 static int pcm512x_set_sysclk(struct snd_soc_dai *dai,
 					int clk_id, unsigned int freq, int dir)
 {
@@ -447,6 +525,7 @@ static int pcm512x_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 }
 
 static const struct snd_soc_dai_ops pcm512x_dai_ops = {
+	.hw_params      = pcm512x_hw_params,
 	.set_fmt        = pcm512x_set_dai_fmt,
 	.set_sysclk     = pcm512x_set_sysclk,
 };

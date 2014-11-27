@@ -170,6 +170,21 @@ enum pcm512x_mode {
 /* Page 0, Register 29 - NCP Clock Divider */
 #define PCM512x_DNCP_MASK (127 << 0)
 
+/* Page 0, Register 30 - OSR Clock Divider */
+#define PCM512x_DOSR_MASK (127 << 0)
+
+/* Page 0, Register 32 - Master Mode BCLK Divider */
+#define PCM512X_DBCK_MASK (127 << 0)
+
+/* Page 0, Register 33 - Master Mode LRCLK Divider */
+#define PCM512X_DLRCK_MASK (255 << 0)
+
+/* Page 0, Register 34 - FS Speed Mode */
+#define PCM512x_FSSP_MASK (3 << 0)
+
+/* Page 0, Register 35 & 36 - DSP clock cyles in an audio frame */
+#define PCM512x_IDAC_MASK (255 << 0)
+
 /* Page 0, Register 37 - Error detection */
 #define PCM512x_IPLK (1 << 0)
 #define PCM512x_DCAS (1 << 1)
