@@ -44,6 +44,7 @@ struct pcm512x_priv {
 	int pll_ref_gpio;
 	int pll_out_gpio;
 	int pll_lock_gpio;
+	enum pcm512x_mode mode;
 };
 
 /*
@@ -345,6 +346,69 @@ static int pcm512x_set_bias_level(struct snd_soc_codec *codec,
 	return 0;
 }
 
+static int pcm512x_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+{
+	struct pcm512x_priv *pcm512x = dev_get_drvdata(dai->codec->dev);
+	int master, bck_lrck_cfg, i2s_cfg;
+
+	master = 0;
+	bck_lrck_cfg = 0;
+	i2s_cfg = 0;
+
+	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
+	case SND_SOC_DAIFMT_CBM_CFM:
+		master |= (PCM512x_RBCK | PCM512x_RLRK);
+		bck_lrck_cfg |= (PCM512x_BCKO | PCM512x_LRKO);
+		pcm512x->mode = PCM512x_MASTER_MODE;
+		break;
+	case SND_SOC_DAIFMT_CBS_CFS:
+		pcm512x->mode = PCM512x_SLAVE_MODE;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
+	case SND_SOC_DAIFMT_I2S:
+		i2s_cfg |= PCM512x_AFMT_I2S;
+		break;
+	case SND_SOC_DAIFMT_RIGHT_J:
+		i2s_cfg |= PCM512x_AFMT_RTJ;
+		break;
+	case SND_SOC_DAIFMT_LEFT_J:
+		i2s_cfg |= PCM512x_AFMT_LTJ;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
+	case SND_SOC_DAIFMT_NB_NF:
+	case SND_SOC_DAIFMT_NB_IF:
+		break;
+	case SND_SOC_DAIFMT_IB_NF:
+	case SND_SOC_DAIFMT_IB_IF:
+		bck_lrck_cfg |= PCM512x_BCKP;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	regmap_update_bits(pcm512x->regmap, PCM512x_I2S_1,
+						PCM512x_AFMT_MASK, i2s_cfg);
+	regmap_update_bits(pcm512x->regmap, PCM512x_MASTER_MODE,
+						PCM512x_RBCK|PCM512x_RLRK, master);
+	regmap_update_bits(pcm512x->regmap, PCM512x_BCLK_LRCLK_CFG,
+						PCM512x_BCKO|PCM512x_LRKO|PCM512x_BCKP,
+						bck_lrck_cfg);
+
+	return 0;
+}
+
+static const struct snd_soc_dai_ops pcm512x_dai_ops = {
+	.set_fmt        = pcm512x_set_dai_fmt,
+};
+
 static struct snd_soc_dai_driver pcm512x_dai = {
 	.name = "pcm512x-hifi",
 	.playback = {
@@ -356,6 +420,7 @@ static struct snd_soc_dai_driver pcm512x_dai = {
 			   SNDRV_PCM_FMTBIT_S24_LE |
 			   SNDRV_PCM_FMTBIT_S32_LE
 	},
+	.ops = &pcm512x_dai_ops,
 };
 
 static struct snd_soc_codec_driver pcm512x_codec_driver = {

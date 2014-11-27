@@ -25,6 +25,11 @@ enum pcm512x_clockType {
 	PCM512x_NON_AUDIO_RATE,
 };
 
+enum pcm512x_mode {
+	PCM512x_SLAVE_MODE,
+	PCM512x_MASTER_MODE,
+};
+
 #define PCM512x_VIRT_BASE 0x100
 #define PCM512x_PAGE_LEN  0x100
 #define PCM512x_PAGE_BASE(n)  (PCM512x_VIRT_BASE + (PCM512x_PAGE_LEN * n))
