@@ -48,9 +48,10 @@
 				reg = <0x4c>;
 
 				clocks = <&osc24576>;
-                pllref-gpio = <4>;
-                pllout-gpio = <6>;
-                plllock-gpio = <3>;
+				clock-type = <1>;
+                pll-ref-gpio = <4>;
+                pll-out-gpio = <6>;
+                pll-lock-gpio = <3>;
 			};
 		};
 	};
